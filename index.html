@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Tracker</title>
+<style>
+:root{
+  --bg:#f7f8fa;
+  --card:#ffffff;
+  --primary:#7c9cff;
+  --accent:#a5f3c6;
+  --text:#1f2937;
+  --sub:#6b7280;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,sans-serif;}
+
+body{
+  background:var(--bg);
+  display:flex;
+  justify-content:center;
+  padding:20px;
+}
+
+.container{
+  width:100%;
+  max-width:420px;
+}
+
+.card{
+  background:var(--card);
+  border-radius:20px;
+  padding:20px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.05);
+}
+
+h1{
+  font-size:20px;
+  margin-bottom:10px;
+}
+
+input{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:12px;
+  background:#f1f3f6;
+  outline:none;
+  font-size:14px;
+}
+
+.progress{
+  text-align:center;
+  margin:20px 0;
+}
+
+.percent{
+  font-size:32px;
+  font-weight:bold;
+  color:var(--primary);
+  transition:0.3s;
+}
+
+.message{
+  font-size:14px;
+  color:var(--sub);
+  margin-top:5px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:10px;
+}
+
+.day{
+  width:100%;
+  padding-top:100%;
+  position:relative;
+  border-radius:12px;
+  background:#eef1f6;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.day.checked{
+  background:var(--primary);
+  box-shadow:0 4px 10px rgba(124,156,255,0.4);
+}
+
+.day span{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:12px;
+  color:#555;
+}
+
+.day.checked span{
+  color:white;
+}
+
+.confetti{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+  overflow:hidden;
+}
+
+.confetti div{
+  position:absolute;
+  width:8px;
+  height:8px;
+  background:var(--primary);
+  animation:fall 2s linear infinite;
+}
+
+@keyframes fall{
+  0%{transform:translateY(-10px) rotate(0);}
+  100%{transform:translateY(100vh) rotate(360deg);}
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <div class="card">
+    <h1>✨ 나의 습관</h1>
+    <input id="habitInput" placeholder="예: 매일 물 2L 마시기">
+
+    <div class="progress">
+      <div class="percent" id="percent">0%</div>
+      <div class="message" id="message">시작해볼까요?</div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="confetti" id="confetti"></div>
+
+<script>
+const grid = document.getElementById('grid');
+const percentEl = document.getElementById('percent');
+const messageEl = document.getElementById('message');
+const habitInput = document.getElementById('habitInput');
+
+let state = JSON.parse(localStorage.getItem('habitData')) || {
+  habit:"",
+  days:Array(30).fill(false)
+};
+
+habitInput.value = state.habit;
+
+habitInput.addEventListener('input',()=>{
+  state.habit = habitInput.value;
+  save();
+});
+
+function save(){
+  localStorage.setItem('habitData', JSON.stringify(state));
+}
+
+function render(){
+  grid.innerHTML='';
+  state.days.forEach((checked,i)=>{
+    const d=document.createElement('div');
+    d.className='day'+(checked?' checked':'');
+    d.innerHTML=`<span>${i+1}</span>`;
+    d.onclick=()=>{
+      state.days[i]=!state.days[i];
+      save();
+      render();
+      updateProgress();
+    };
+    grid.appendChild(d);
+  });
+}
+
+function updateProgress(){
+  const done = state.days.filter(v=>v).length;
+  const percent = Math.round((done/30)*100);
+  percentEl.textContent = percent+"%";
+
+  if(percent===100){
+    messageEl.textContent="완벽해요! 🎉";
+    launchConfetti();
+  }else if(percent>80){
+    messageEl.textContent="거의 다 왔어요!";
+  }else if(percent>50){
+    messageEl.textContent="좋은 흐름이에요 👍";
+  }else if(percent>20){
+    messageEl.textContent="계속 쌓고 있어요!";
+  }else{
+    messageEl.textContent="오늘도 한 걸음 💪";
+  }
+}
+
+function launchConfetti(){
+  const container=document.getElementById('confetti');
+  container.innerHTML='';
+  for(let i=0;i<60;i++){
+    const c=document.createElement('div');
+    c.style.left=Math.random()*100+'%';
+    c.style.animationDelay=Math.random()*2+'s';
+    c.style.background=`hsl(${Math.random()*360},70%,70%)`;
+    container.appendChild(c);
+  }
+  setTimeout(()=>container.innerHTML='',3000);
+}
+
+render();
+updateProgress();
+</script>
+</body>
+</html>
